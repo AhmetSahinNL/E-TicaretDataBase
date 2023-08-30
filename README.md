@@ -1,0 +1,2 @@
+# E-TicaretDataBase
+SQL Projesi 
