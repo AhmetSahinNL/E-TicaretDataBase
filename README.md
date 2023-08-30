@@ -1,5 +1,6 @@
+
 ## E-TicaretDataBase
-# SQL Projesi 
+SQL Projesi 
 
 
 ## 1. Categories Tablosu
