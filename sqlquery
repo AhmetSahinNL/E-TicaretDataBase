@@ -1,0 +1,857 @@
+USE [master]
+GO
+/****** Object:  Database [eTicaretDb]    Script Date: 30.08.2023 19:51:52 ******/
+CREATE DATABASE [eTicaretDb]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'eTicaretDb', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\eTicaretDb.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+ LOG ON 
+( NAME = N'eTicaretDb_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\eTicaretDb_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
+GO
+ALTER DATABASE [eTicaretDb] SET COMPATIBILITY_LEVEL = 160
+GO
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [eTicaretDb].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [eTicaretDb] SET ANSI_NULL_DEFAULT OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET ANSI_NULLS OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET ANSI_PADDING OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET ANSI_WARNINGS OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET ARITHABORT OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET AUTO_CLOSE OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET AUTO_SHRINK OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET AUTO_UPDATE_STATISTICS ON 
+GO
+ALTER DATABASE [eTicaretDb] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET CURSOR_DEFAULT  GLOBAL 
+GO
+ALTER DATABASE [eTicaretDb] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET NUMERIC_ROUNDABORT OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET QUOTED_IDENTIFIER OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET RECURSIVE_TRIGGERS OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET  DISABLE_BROKER 
+GO
+ALTER DATABASE [eTicaretDb] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET TRUSTWORTHY OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET PARAMETERIZATION SIMPLE 
+GO
+ALTER DATABASE [eTicaretDb] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET HONOR_BROKER_PRIORITY OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET RECOVERY SIMPLE 
+GO
+ALTER DATABASE [eTicaretDb] SET  MULTI_USER 
+GO
+ALTER DATABASE [eTicaretDb] SET PAGE_VERIFY CHECKSUM  
+GO
+ALTER DATABASE [eTicaretDb] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [eTicaretDb] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [eTicaretDb] SET TARGET_RECOVERY_TIME = 60 SECONDS 
+GO
+ALTER DATABASE [eTicaretDb] SET DELAYED_DURABILITY = DISABLED 
+GO
+ALTER DATABASE [eTicaretDb] SET ACCELERATED_DATABASE_RECOVERY = OFF  
+GO
+ALTER DATABASE [eTicaretDb] SET QUERY_STORE = ON
+GO
+ALTER DATABASE [eTicaretDb] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
+GO
+USE [eTicaretDb]
+GO
+/****** Object:  UserDefinedFunction [dbo].[SEO_URL]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[SEO_URL]
+(
+    @str NVARCHAR(4000)
+)
+RETURNS NVARCHAR(4000) AS
+BEGIN
+    DECLARE @IncorrectCharLoc SMALLINT
+    SET @str = REPLACE(LTRIM(RTRIM(@str)),' ','-') -- Replace whitespace with hyphen
+    SET @IncorrectCharLoc = PATINDEX('%[^a-zA-Z0-9-]%', @str)
+    WHILE @IncorrectCharLoc > 0
+    BEGIN
+        SET @str = STUFF(@str, @IncorrectCharLoc, 1, '')
+        SET @IncorrectCharLoc = PATINDEX('%[^a-zA-Z0-9-]%', @str)
+    END
+
+    SET @IncorrectCharLoc = CHARINDEX('--', @str) -- Look for double hyphen
+    WHILE @IncorrectCharLoc > 0
+    BEGIN
+        SET @str = REPLACE(@str, '--', '-') -- Replace double hyphen with single hyphen
+        SET @IncorrectCharLoc = CHARINDEX('--', @str)
+    END
+
+    RETURN LOWER(@str)
+END
+GO
+/****** Object:  Table [dbo].[Categories]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Categories](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](250) NOT NULL,
+	[IsActive] [bit] NOT NULL,
+	[MainCategoryId] [int] NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[Path] [varchar](max) NULL,
+	[VatRate] [int] NOT NULL,
+ CONSTRAINT [PK_Categories] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CategoryEquivalents]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CategoryEquivalents](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[CategoryId] [int] NOT NULL,
+	[EquivalentId] [int] NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_CategoryEquivalents] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CategoryFields]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CategoryFields](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](150) NOT NULL,
+	[CategoryId] [int] NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_CategoryFields] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CommentImageUrls]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CommentImageUrls](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[CommentId] [int] NOT NULL,
+	[ImageUrl] [varchar](max) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_CommentImageUrls] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CommentLikes]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CommentLikes](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[UserId] [int] NOT NULL,
+	[CommentId] [int] NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_CommentLikes] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Comments]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Comments](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[OrderId] [int] NOT NULL,
+	[Rating] [int] NOT NULL,
+	[Comment] [varchar](250) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_Comments] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Invoices]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Invoices](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[OrderId] [int] NOT NULL,
+	[InvoiceNumber] [varchar](16) NOT NULL,
+	[Date] [datetime] NOT NULL,
+	[DeliveryDate] [datetime] NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[Discount] [money] NOT NULL,
+ CONSTRAINT [PK_Invoices] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Orders]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Orders](
+	[Id] [int] NOT NULL,
+	[UserId] [int] NOT NULL,
+	[ProductFieldId] [int] NOT NULL,
+	[SellingPrice] [money] NOT NULL,
+	[Stock] [decimal](18, 2) NOT NULL,
+	[UserAddressId] [int] NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[OrderStatusId] [int] NOT NULL,
+	[CargoTracingNumber] [varchar](150) NULL,
+ CONSTRAINT [PK_Orders] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[OrderStatuses]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[OrderStatuses](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](100) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[IsActive] [bit] NOT NULL,
+ CONSTRAINT [PK_OrderStatuses] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[PaymentDetails]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[PaymentDetails](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[OrderId] [int] NOT NULL,
+	[PaymentPrice] [money] NOT NULL,
+	[PaymentType] [varchar](150) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[KKPaymentConfirmId] [int] NULL,
+	[BankName] [varchar](150) NULL,
+	[IsCompleted] [bit] NOT NULL,
+	[CompletedDate] [datetime] NULL,
+	[Description] [varchar](250) NULL,
+ CONSTRAINT [PK_PaymentDetails] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ProductFieldCategoryFields]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ProductFieldCategoryFields](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[ProductFieldId] [int] NOT NULL,
+	[CategoryFieldId] [int] NOT NULL,
+	[Value] [varchar](250) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_ProductFieldCategoryFields] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ProductFieldImageUrls]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ProductFieldImageUrls](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[ImageUrl] [varchar](max) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[ProductFieldId] [int] NOT NULL,
+ CONSTRAINT [PK_ProductFieldImageUrls] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ProductFields]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ProductFields](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](150) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[ProductSelectionId] [int] NOT NULL,
+	[MainImageUrl] [varchar](max) NULL,
+	[MainProductFieldId] [int] NULL,
+	[IsActive] [bit] NOT NULL,
+	[Price] [money] NULL,
+	[SellingPrice] [money] NULL,
+	[Stock] [decimal](18, 2) NULL,
+	[IsVatInclude] [bit] NOT NULL,
+ CONSTRAINT [PK_ProductFields] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Products]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Products](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](255) NOT NULL,
+	[OverrangeRating] [decimal](3, 2) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[SellerId] [int] NOT NULL,
+ CONSTRAINT [PK_Products] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ProductSelections]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ProductSelections](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](150) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[ProductId] [int] NOT NULL,
+	[MainProductSelectionId] [int] NULL,
+ CONSTRAINT [PK_ProductSelections] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Sellers]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Sellers](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](350) NOT NULL,
+	[Address] [varchar](max) NOT NULL,
+	[TaxIdentityNumber] [char](10) NOT NULL,
+	[IdentityNumber] [char](11) NULL,
+	[TaxDepartmentId] [int] NOT NULL,
+	[WebSite] [varchar](max) NULL,
+	[PhoneNumber] [varchar](20) NOT NULL,
+	[Email] [varchar](500) NOT NULL,
+	[UserName] [varchar](150) NOT NULL,
+	[PasswordHash] [varbinary](max) NOT NULL,
+	[PasswordSalt] [varbinary](max) NOT NULL,
+	[IsConfirm] [bit] NOT NULL,
+	[ConfirmCode] [int] NOT NULL,
+	[ConfirmCodeSendDate] [datetime] NOT NULL,
+	[ChangePasswordCode] [int] NULL,
+	[ChangePasswordCodeSendDate] [datetime] NULL,
+	[ChangePasswordIsCompleted] [bit] NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[AverageRating] [decimal](3, 2) NOT NULL,
+	[IsActive] [bit] NOT NULL,
+ CONSTRAINT [PK_Sellers] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [IX_Email] UNIQUE NONCLUSTERED 
+(
+	[Email] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [IX_PhoneNumber] UNIQUE NONCLUSTERED 
+(
+	[PhoneNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [IX_TaxIdentityNumber] UNIQUE NONCLUSTERED 
+(
+	[TaxIdentityNumber] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [IX_UserName] UNIQUE NONCLUSTERED 
+(
+	[UserName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[SellerTitles]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[SellerTitles](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Title] [varchar](50) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+	[SellerId] [int] NOT NULL,
+ CONSTRAINT [PK_SellerTitles] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ShoppingCarts]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ShoppingCarts](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[UserId] [int] NOT NULL,
+	[ProductFieldId] [int] NOT NULL,
+	[Stock] [decimal](18, 2) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_ShoppingCarts] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TaxDepartments]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TaxDepartments](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[City] [varchar](150) NOT NULL,
+	[Town] [varchar](150) NOT NULL,
+	[Code] [int] NOT NULL,
+	[Name] [varchar](150) NOT NULL,
+ CONSTRAINT [PK_TaxDepartments] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TicketDetails]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TicketDetails](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[TicketId] [int] NOT NULL,
+	[SellerId] [int] NULL,
+	[UserId] [int] NULL,
+	[Content] [varchar](250) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_TicketDetails] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Tickets]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Tickets](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[SellerId] [int] NOT NULL,
+	[UserId] [int] NOT NULL,
+	[Subject] [varchar](150) NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_Tickets] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[UserAddresses]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[UserAddresses](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[UserId] [int] NOT NULL,
+	[City] [varchar](150) NOT NULL,
+	[Town] [varchar](150) NULL,
+	[Street] [varchar](150) NULL,
+	[ZipCode] [varchar](50) NULL,
+	[Address] [varchar](550) NOT NULL,
+	[PhoneNumber] [varchar](50) NULL,
+	[Name] [varchar](50) NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_UserAddresses] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Users]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Users](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [varchar](250) NOT NULL,
+	[Email] [varchar](250) NOT NULL,
+	[PhoneNumber] [varchar](50) NULL,
+	[PasswordHash] [varbinary](max) NOT NULL,
+	[PasswordSalt] [varbinary](max) NOT NULL,
+	[IsActive] [bit] NOT NULL,
+	[CreatedDate] [datetime] NOT NULL,
+	[UpdatedDate] [datetime] NULL,
+ CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Index [IX_Id]    Script Date: 30.08.2023 19:51:52 ******/
+CREATE NONCLUSTERED INDEX [IX_Id] ON [dbo].[Sellers]
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Categories]  WITH CHECK ADD  CONSTRAINT [FK_Categories_Categories] FOREIGN KEY([MainCategoryId])
+REFERENCES [dbo].[Categories] ([Id])
+GO
+ALTER TABLE [dbo].[Categories] CHECK CONSTRAINT [FK_Categories_Categories]
+GO
+ALTER TABLE [dbo].[CategoryEquivalents]  WITH CHECK ADD  CONSTRAINT [FK_CategoryEquivalents_Categories] FOREIGN KEY([EquivalentId])
+REFERENCES [dbo].[Categories] ([Id])
+GO
+ALTER TABLE [dbo].[CategoryEquivalents] CHECK CONSTRAINT [FK_CategoryEquivalents_Categories]
+GO
+ALTER TABLE [dbo].[CategoryEquivalents]  WITH CHECK ADD  CONSTRAINT [FK_CategoryEquivalents_Categories1] FOREIGN KEY([CategoryId])
+REFERENCES [dbo].[Categories] ([Id])
+GO
+ALTER TABLE [dbo].[CategoryEquivalents] CHECK CONSTRAINT [FK_CategoryEquivalents_Categories1]
+GO
+ALTER TABLE [dbo].[CategoryFields]  WITH CHECK ADD  CONSTRAINT [FK_CategoryFields_Categories] FOREIGN KEY([CategoryId])
+REFERENCES [dbo].[Categories] ([Id])
+GO
+ALTER TABLE [dbo].[CategoryFields] CHECK CONSTRAINT [FK_CategoryFields_Categories]
+GO
+ALTER TABLE [dbo].[CommentImageUrls]  WITH CHECK ADD  CONSTRAINT [FK_CommentImageUrls_Comments] FOREIGN KEY([CommentId])
+REFERENCES [dbo].[Comments] ([Id])
+GO
+ALTER TABLE [dbo].[CommentImageUrls] CHECK CONSTRAINT [FK_CommentImageUrls_Comments]
+GO
+ALTER TABLE [dbo].[CommentLikes]  WITH CHECK ADD  CONSTRAINT [FK_CommentLikes_Comments] FOREIGN KEY([CommentId])
+REFERENCES [dbo].[Comments] ([Id])
+GO
+ALTER TABLE [dbo].[CommentLikes] CHECK CONSTRAINT [FK_CommentLikes_Comments]
+GO
+ALTER TABLE [dbo].[CommentLikes]  WITH CHECK ADD  CONSTRAINT [FK_CommentLikes_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[CommentLikes] CHECK CONSTRAINT [FK_CommentLikes_Users]
+GO
+ALTER TABLE [dbo].[Comments]  WITH CHECK ADD  CONSTRAINT [FK_Comments_Orders] FOREIGN KEY([OrderId])
+REFERENCES [dbo].[Orders] ([Id])
+GO
+ALTER TABLE [dbo].[Comments] CHECK CONSTRAINT [FK_Comments_Orders]
+GO
+ALTER TABLE [dbo].[Invoices]  WITH CHECK ADD  CONSTRAINT [FK_Invoices_Orders] FOREIGN KEY([OrderId])
+REFERENCES [dbo].[Orders] ([Id])
+GO
+ALTER TABLE [dbo].[Invoices] CHECK CONSTRAINT [FK_Invoices_Orders]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_OrderStatuses] FOREIGN KEY([OrderStatusId])
+REFERENCES [dbo].[OrderStatuses] ([Id])
+GO
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_OrderStatuses]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_UserAddresses] FOREIGN KEY([UserAddressId])
+REFERENCES [dbo].[UserAddresses] ([Id])
+GO
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_UserAddresses]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Users]
+GO
+ALTER TABLE [dbo].[Orders]  WITH CHECK ADD  CONSTRAINT [FK_Orders_Users1] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[Orders] CHECK CONSTRAINT [FK_Orders_Users1]
+GO
+ALTER TABLE [dbo].[PaymentDetails]  WITH CHECK ADD  CONSTRAINT [FK_PaymentDetails_Orders] FOREIGN KEY([OrderId])
+REFERENCES [dbo].[Orders] ([Id])
+GO
+ALTER TABLE [dbo].[PaymentDetails] CHECK CONSTRAINT [FK_PaymentDetails_Orders]
+GO
+ALTER TABLE [dbo].[ProductFieldCategoryFields]  WITH CHECK ADD  CONSTRAINT [FK_ProductFieldCategoryFields_CategoryFields] FOREIGN KEY([CategoryFieldId])
+REFERENCES [dbo].[CategoryFields] ([Id])
+GO
+ALTER TABLE [dbo].[ProductFieldCategoryFields] CHECK CONSTRAINT [FK_ProductFieldCategoryFields_CategoryFields]
+GO
+ALTER TABLE [dbo].[ProductFieldCategoryFields]  WITH CHECK ADD  CONSTRAINT [FK_ProductFieldCategoryFields_ProductFields] FOREIGN KEY([ProductFieldId])
+REFERENCES [dbo].[ProductFields] ([Id])
+GO
+ALTER TABLE [dbo].[ProductFieldCategoryFields] CHECK CONSTRAINT [FK_ProductFieldCategoryFields_ProductFields]
+GO
+ALTER TABLE [dbo].[ProductFieldImageUrls]  WITH CHECK ADD  CONSTRAINT [FK_ProductFieldImageUrls_ProductFields] FOREIGN KEY([ProductFieldId])
+REFERENCES [dbo].[ProductFields] ([Id])
+GO
+ALTER TABLE [dbo].[ProductFieldImageUrls] CHECK CONSTRAINT [FK_ProductFieldImageUrls_ProductFields]
+GO
+ALTER TABLE [dbo].[ProductFields]  WITH CHECK ADD  CONSTRAINT [FK_ProductFields_ProductFields] FOREIGN KEY([MainProductFieldId])
+REFERENCES [dbo].[ProductFields] ([Id])
+GO
+ALTER TABLE [dbo].[ProductFields] CHECK CONSTRAINT [FK_ProductFields_ProductFields]
+GO
+ALTER TABLE [dbo].[ProductFields]  WITH CHECK ADD  CONSTRAINT [FK_ProductFields_ProductSelections] FOREIGN KEY([ProductSelectionId])
+REFERENCES [dbo].[ProductSelections] ([Id])
+GO
+ALTER TABLE [dbo].[ProductFields] CHECK CONSTRAINT [FK_ProductFields_ProductSelections]
+GO
+ALTER TABLE [dbo].[Products]  WITH CHECK ADD  CONSTRAINT [FK_Products_Sellers] FOREIGN KEY([SellerId])
+REFERENCES [dbo].[Sellers] ([Id])
+GO
+ALTER TABLE [dbo].[Products] CHECK CONSTRAINT [FK_Products_Sellers]
+GO
+ALTER TABLE [dbo].[ProductSelections]  WITH CHECK ADD  CONSTRAINT [FK_ProductSelections_Products] FOREIGN KEY([ProductId])
+REFERENCES [dbo].[Products] ([Id])
+GO
+ALTER TABLE [dbo].[ProductSelections] CHECK CONSTRAINT [FK_ProductSelections_Products]
+GO
+ALTER TABLE [dbo].[ProductSelections]  WITH CHECK ADD  CONSTRAINT [FK_ProductSelections_ProductSelections] FOREIGN KEY([MainProductSelectionId])
+REFERENCES [dbo].[ProductSelections] ([Id])
+GO
+ALTER TABLE [dbo].[ProductSelections] CHECK CONSTRAINT [FK_ProductSelections_ProductSelections]
+GO
+ALTER TABLE [dbo].[Sellers]  WITH CHECK ADD  CONSTRAINT [FK_Sellers_TaxDepartments] FOREIGN KEY([TaxDepartmentId])
+REFERENCES [dbo].[TaxDepartments] ([Id])
+GO
+ALTER TABLE [dbo].[Sellers] CHECK CONSTRAINT [FK_Sellers_TaxDepartments]
+GO
+ALTER TABLE [dbo].[SellerTitles]  WITH CHECK ADD  CONSTRAINT [FK_SellerTitles_Sellers] FOREIGN KEY([SellerId])
+REFERENCES [dbo].[Sellers] ([Id])
+GO
+ALTER TABLE [dbo].[SellerTitles] CHECK CONSTRAINT [FK_SellerTitles_Sellers]
+GO
+ALTER TABLE [dbo].[ShoppingCarts]  WITH CHECK ADD  CONSTRAINT [FK_ShoppingCarts_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[ShoppingCarts] CHECK CONSTRAINT [FK_ShoppingCarts_Users]
+GO
+ALTER TABLE [dbo].[TicketDetails]  WITH CHECK ADD  CONSTRAINT [FK_TicketDetails_Sellers] FOREIGN KEY([SellerId])
+REFERENCES [dbo].[Sellers] ([Id])
+GO
+ALTER TABLE [dbo].[TicketDetails] CHECK CONSTRAINT [FK_TicketDetails_Sellers]
+GO
+ALTER TABLE [dbo].[TicketDetails]  WITH CHECK ADD  CONSTRAINT [FK_TicketDetails_Tickets] FOREIGN KEY([TicketId])
+REFERENCES [dbo].[Tickets] ([Id])
+GO
+ALTER TABLE [dbo].[TicketDetails] CHECK CONSTRAINT [FK_TicketDetails_Tickets]
+GO
+ALTER TABLE [dbo].[TicketDetails]  WITH CHECK ADD  CONSTRAINT [FK_TicketDetails_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[TicketDetails] CHECK CONSTRAINT [FK_TicketDetails_Users]
+GO
+ALTER TABLE [dbo].[Tickets]  WITH CHECK ADD  CONSTRAINT [FK_Tickets_Sellers] FOREIGN KEY([SellerId])
+REFERENCES [dbo].[Sellers] ([Id])
+GO
+ALTER TABLE [dbo].[Tickets] CHECK CONSTRAINT [FK_Tickets_Sellers]
+GO
+ALTER TABLE [dbo].[Tickets]  WITH CHECK ADD  CONSTRAINT [FK_Tickets_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[Tickets] CHECK CONSTRAINT [FK_Tickets_Users]
+GO
+ALTER TABLE [dbo].[UserAddresses]  WITH CHECK ADD  CONSTRAINT [FK_UserAddresses_Users] FOREIGN KEY([UserId])
+REFERENCES [dbo].[Users] ([Id])
+GO
+ALTER TABLE [dbo].[UserAddresses] CHECK CONSTRAINT [FK_UserAddresses_Users]
+GO
+/****** Object:  StoredProcedure [dbo].[CategoryListByNameAndCategoryPath]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[CategoryListByNameAndCategoryPath] 
+AS
+BEGIN
+WITH CategoryHierarchy AS
+(
+    -- Ana kategorileri bul
+    SELECT 
+        Id,
+        Name,
+        CAST(Name AS NVARCHAR(MAX)) AS CategoryPath
+    FROM 
+        Categories
+    WHERE 
+        MainCategoryId IS NULL
+    UNION ALL
+    -- Alt kategorileri bul
+    SELECT 
+        c.Id,
+        c.Name,
+        CAST(ch.CategoryPath + ' > ' + c.Name AS NVARCHAR(MAX)) AS CategoryPath
+    FROM 
+        Categories c
+    JOIN 
+        CategoryHierarchy ch ON ch.Id = c.MainCategoryId
+)
+SELECT * FROM CategoryHierarchy
+ORDER BY CategoryPath;
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[CategoryListWithSubCategories]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[CategoryListWithSubCategories]
+AS
+Begin
+WITH CategoryHierarchy AS (
+	SELECT 
+		Id,
+		Name,
+		IsActive,
+		MainCategoryId,
+		CAST(Name as VARCHAR(MAX)) AS Hierarchy
+	FROM
+		Categories
+	Where 
+		MainCategoryId is Null
+
+	UNION ALL
+
+	SELECT
+		c.Id,
+		c.Name,
+		c.IsActive,
+		c.MainCategoryId,
+		CAST((ch.Hierarchy + ' > ' + c.Name) AS VARCHAR(MAX)) as Hierarchy
+	From 
+	Categories c
+	INNER JOIN CategoryHierarchy ch
+	on ch.Id = c.MainCategoryId
+)
+
+SELECT Hierarchy From CategoryHierarchy where IsActive = 1
+End
+GO
+/****** Object:  StoredProcedure [dbo].[MainCategoryListByCategoryId]    Script Date: 30.08.2023 19:51:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[MainCategoryListByCategoryId] @categoryId INT
+AS
+BEGIN
+WITH CategoryHierarchy AS (
+	SELECT
+		Id,
+		Name,
+		IsActive,
+		MainCategoryId,
+		CAST(Name as VARCHAR(MAX)) AS Hierarchy
+	FROM
+		Categories
+	Where 
+		Id = @categoryId
+
+	UNION ALL
+
+	SELECT
+		c.Id,
+		c.Name,
+		c.IsActive,
+		c.MainCategoryId,
+		CAST((c.name  + ' > ' + ch.Hierarchy) as VARCHAR(MAX)) AS Hierarchy 
+	FROM
+		Categories c
+	INNER JOIN CategoryHierarchy ch
+	ON ch.MainCategoryId = c.Id
+)
+
+SELECT TOP 1 Hierarchy 
+From CategoryHierarchy
+Where IsActive = 1
+Order By LEN(Hierarchy) DESC
+END
+GO
+USE [master]
+GO
+ALTER DATABASE [eTicaretDb] SET  READ_WRITE 
+GO
