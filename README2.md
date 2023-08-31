@@ -31,7 +31,7 @@ BEGIN
 END
 ```
 
-# AÇIKLAMA:
+AÇIKLAMA:
 
 Bu SQL saklama prosedürü bir e-ticaret sitesindeki kategori yapısını hiyerarşik bir şekilde listeleyen ve her kategorinin adını ve kategorinin hiyerarşik yolu (path) bilgisini içeren sonuçları döndüren bir sorgu oluşturur. Kısacası veritabanındaki kategorileri ağaç yapısına göre düzenler ve her kategorinin tam yolunu temsil eden bir "CategoryPath" alanı oluşturur.
 
