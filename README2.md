@@ -35,7 +35,7 @@ END
 
 Bu SQL saklama prosedürü bir e-ticaret sitesindeki kategori yapısını hiyerarşik bir şekilde listeleyen ve her kategorinin adını ve kategorinin hiyerarşik yolu (path) bilgisini içeren sonuçları döndüren bir sorgu oluşturur. Kısacası veritabanındaki kategorileri ağaç yapısına göre düzenler ve her kategorinin tam yolunu temsil eden bir "CategoryPath" alanı oluşturur.
 
-Prosedürün işleyişi adım adım aşağıdaki gibidir:
+Prosedürün işleyişi adım adım şu şekildedir:
 • Ana kategorileri bulma:
 İlk adımda 'Categories' tablosundan ana kategorileri seçer. Ana kategoriler 'MainCategoryId' alanı NULL olan kategorilerdir. Bu kategoriler hiyerarşinin en üst düzeyinde yer alır.
 • Alt kategorileri bulma:
@@ -88,7 +88,7 @@ AÇIKLAMA:
 
 Bu SQL saklama prosedürü bir e-ticaret sitesindeki kategori yapısını ve alt kategorileri bir araya getiren ve etkin (aktif) kategorilerin hiyerarşik yollarını içeren sonuçları döndüren bir sorgu oluşturur. Özellikle kategori ağaç yapısını ve alt kategorileri içeren hiyerarşik bir liste oluştururken yalnızca etkin kategorileri listelemeyi sağlar.
 
-Prosedürün işleyişi adım adım aşağıdaki gibidir:
+Prosedürün işleyişi adım adım şu şekildedir:
 • Ana kategorileri bulma:
 İlk adımda 'Categories' tablosundan ana kategorileri seçer. Ana kategoriler 'MainCategoryId' alanı NULL olan kategorilerdir. Bu kategoriler hiyerarşinin en üst düzeyinde yer alır.
 • Alt kategorileri bulma:
@@ -144,7 +144,7 @@ AÇIKLAMA:
 
 Bu SQL saklama prosedürü belirli bir kategori ID'sine (categoryId) dayanarak verilen kategorinin ana kategorisinin (ana kategori) hiyerarşik yolunu oluşturan ve etkin (aktif) ana kategorinin yolunu döndüren bir sorgu oluşturur. Yani verilen kategoriye ait ana kategorinin hiyerarşik yolunu oluşturarak döndürür.
 
-Prosedürün işleyişi adım adım aşağıdaki gibidir:
+Prosedürün işleyişi adım adım şu şekildedir:
 • Belirli kategori ID'sine sahip kategoriyi bulma:
 İlk adımda verilen '@categoryId' parametresi kullanılarak 'Categories' tablosundan belirli bir kategori bulunur. Bu kategori daha sonra ana kategorisine olan bağlantısı üzerinden hiyerarşi oluşturmak için temel oluşturacak kategoridir.
 • Ana kategori hiyerarşisini oluşturma:
