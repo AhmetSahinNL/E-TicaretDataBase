@@ -1,3 +1,5 @@
+
+```MSSQL
 USE [master]
 GO
 /****** Object:  Database [eTicaretDb]    Script Date: 30.08.2023 19:51:52 ******/
@@ -855,3 +857,4 @@ USE [master]
 GO
 ALTER DATABASE [eTicaretDb] SET  READ_WRITE 
 GO
+```
